@@ -1665,7 +1665,7 @@ function DoScaffold()
 
     Character:Swing()
 
-    Character:PlaceBlock(Character:GetStackHeld(), BlockposTarget:ToBlockPos(), Face, position)
+    Character:PlaceBlock(Character:GetHeldItem(), BlockposTarget:ToBlockPos(), Face, position)
 end
 
 local eagle_time = os.clock()
