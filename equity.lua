@@ -1127,6 +1127,11 @@ local Scaffold = false
 local SumoWalls = false
 local counter = 0
 
+local noFall = false
+local noFallMode = "MotionY" -- "Packet" or "MotionY"
+local noFallYValue = 0.2
+local noFallSpoofTicks = 3
+local noFallSpoofCounter = 0
 
 
 UI:Toggle({
@@ -1146,6 +1151,47 @@ UI:TextBox({
 	end
 })
 
+
+
+Tab2:Toggle({
+	Name = "noFall",
+	Description = "Prevents fall damage",
+	Callback = function(Callback)
+		noFall = Callback
+	end
+}):Options()
+	:TextBox({
+		Name = "Mode",
+		Text = noFallMode,
+		Editable = true,
+		Callback = function(val)
+			val = tostring(val):lower()
+			if val == "packet" or val == "packets" then
+				noFallMode = "Packet"
+			else
+				noFallMode = "MotionY"
+			end
+		end
+	})
+	:Slider({
+		Name = "Y Velocity",
+		Min = 0.01,
+		Max = 0.5,
+		Default = 0.2,
+		Callback = function(val)
+			noFallYValue = val
+		end
+	})
+	:Slider({
+		Name = "Spoof Ticks",
+		Min = 1,
+		Max = 10,
+		Default = 3,
+		Callback = function(val)
+			noFallSpoofTicks = math.floor(val)
+		end
+	})
+
 Tab2:Toggle({
 	Name = "KickSelf",
 	Description = "kicks you (works only in servers)",
@@ -1153,6 +1199,7 @@ Tab2:Toggle({
 		game:Shutdown("bye bye!")
 	end
 })
+
 
 local noclickdelay = Tab1:Toggle({
 	Name ="NoClickDelay",
@@ -1531,9 +1578,9 @@ function DoReach()
 end
 function DoCrit()
 	local pos = LocalPlayer.Character.Position
-	PacketService:SendPacket("C04", {pos.X, pos.Y + 0.0625,z, true})
+	PacketService:SendPacket("C04", {pos.X, pos.Y + 0.0625,pos.Z, true})
 	PacketService:SendPacket("C04", {pos.X, pos.Y, pos.Z, false})
-	PacketService:SendPacket("C04", {pos.X, pos.Y + 1.1E-5D,z, false})
+	PacketService:SendPacket("C04", {pos.X, pos.Y + 1.1E-5D,pos.Z, false})
 end
 
 function GetOffsets(face, bx, by, bz)
@@ -1785,7 +1832,7 @@ end
 
 function DoFullbright()
 	if LightingService.Brightness ~= 10 then
-		prevBrightness = LightingService.Brightness -- sets it to 10 idk why
+		prevBrightness = LightingService.Brightness
 		LightingService.Brightness = 10
 	end
 end
@@ -1812,27 +1859,50 @@ end)
 connect(game:GetService("RunService").Tick, function()
 	if Killaura then
 		DoKillaura()
-    end
+	end
 
-	if not (LocalPlayer.Character and LocalPlayer.Character:IsAlive()) then return end
-    if VelocityToggle then
+	if not (LocalPlayer.Character and LocalPlayer.Character:IsAlive()) then
+		noFallSpoofCounter = 0
+		return
+	end
+
+	if noFall then
+		local char = LocalPlayer.Character
+		local onGround = char:IsOnGround()
+		local falling = char:GetMotionY() < -0.5
+		-- Track if we have spoofed this fall
+		if not noFallSpoofed then noFallSpoofed = false end
+		if not onGround and falling then
+			local pos = char:GetPosition()
+			local blockBelow1 = Workspace:GetBlockName(Vector3.new(pos.X, pos.Y - 1, pos.Z))
+			local blockBelow2 = Workspace:GetBlockName(Vector3.new(pos.X, pos.Y - 2, pos.Z))
+			if (blockBelow1 ~= "air" or blockBelow2 ~= "air") and not noFallSpoofed then
+				PacketService:SendPacket("C04", {pos.X, pos.Y, pos.Z, true})
+				noFallSpoofed = true
+			end
+		else
+			noFallSpoofed = false
+		end
+	end
+
+	if VelocityToggle then
 		DoVelocity()
-    end
+	end
 	if Scaffold then 
 		DoScaffold()
 	end
 
 	if Eagle then
 		DoEagle()
-    end
+	end
 
-    if SumoWalls then
-        doSumoWalls()
-    else
-        for i,v in pairs(Block._blocks) do
-            v:destroy()
-        end
-    end
+	if SumoWalls then
+		doSumoWalls()
+	else
+		for i,v in pairs(Block._blocks) do
+			v:destroy()
+		end
+	end
 	if Fullbright then
 		DoFullbright()
 	end
