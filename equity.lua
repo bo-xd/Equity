@@ -1129,6 +1129,7 @@ local counter = 0
 
 
 
+
 UI:Toggle({
 	Name ="Transparent UI",
 	Description = "This thing is so cool",
@@ -1146,6 +1147,10 @@ UI:TextBox({
 	end
 })
 
+
+
+
+
 Tab2:Toggle({
 	Name = "KickSelf",
 	Description = "kicks you (works only in servers)",
@@ -1153,6 +1158,7 @@ Tab2:Toggle({
 		game:Shutdown("bye bye!")
 	end
 })
+
 
 local noclickdelay = Tab1:Toggle({
 	Name ="NoClickDelay",
@@ -1531,9 +1537,9 @@ function DoReach()
 end
 function DoCrit()
 	local pos = LocalPlayer.Character.Position
-	PacketService:SendPacket("C04", {pos.X, pos.Y + 0.0625,z, true})
+	PacketService:SendPacket("C04", {pos.X, pos.Y + 0.0625,pos.Z, true})
 	PacketService:SendPacket("C04", {pos.X, pos.Y, pos.Z, false})
-	PacketService:SendPacket("C04", {pos.X, pos.Y + 1.1E-5D,z, false})
+	PacketService:SendPacket("C04", {pos.X, pos.Y + 1.1E-5D,pos.Z, false})
 end
 
 function GetOffsets(face, bx, by, bz)
@@ -1785,7 +1791,7 @@ end
 
 function DoFullbright()
 	if LightingService.Brightness ~= 10 then
-		prevBrightness = LightingService.Brightness -- sets it to 10 idk why
+		prevBrightness = LightingService.Brightness
 		LightingService.Brightness = 10
 	end
 end
@@ -1812,27 +1818,33 @@ end)
 connect(game:GetService("RunService").Tick, function()
 	if Killaura then
 		DoKillaura()
-    end
+	end
 
-	if not (LocalPlayer.Character and LocalPlayer.Character:IsAlive()) then return end
-    if VelocityToggle then
+	if not (LocalPlayer.Character and LocalPlayer.Character:IsAlive()) then
+		noFallSpoofCounter = 0
+		return
+	end
+
+
+
+	if VelocityToggle then
 		DoVelocity()
-    end
+	end
 	if Scaffold then 
 		DoScaffold()
 	end
 
 	if Eagle then
 		DoEagle()
-    end
+	end
 
-    if SumoWalls then
-        doSumoWalls()
-    else
-        for i,v in pairs(Block._blocks) do
-            v:destroy()
-        end
-    end
+	if SumoWalls then
+		doSumoWalls()
+	else
+		for i,v in pairs(Block._blocks) do
+			v:destroy()
+		end
+	end
 	if Fullbright then
 		DoFullbright()
 	end
