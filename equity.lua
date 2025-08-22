@@ -1127,11 +1127,7 @@ local Scaffold = false
 local SumoWalls = false
 local counter = 0
 
-local noFall = false
-local noFallMode = "MotionY" -- "Packet" or "MotionY"
-local noFallYValue = 0.2
-local noFallSpoofTicks = 3
-local noFallSpoofCounter = 0
+
 
 
 UI:Toggle({
@@ -1153,44 +1149,7 @@ UI:TextBox({
 
 
 
-Tab2:Toggle({
-	Name = "noFall",
-	Description = "Prevents fall damage",
-	Callback = function(Callback)
-		noFall = Callback
-	end
-}):Options()
-	:TextBox({
-		Name = "Mode",
-		Text = noFallMode,
-		Editable = true,
-		Callback = function(val)
-			val = tostring(val):lower()
-			if val == "packet" or val == "packets" then
-				noFallMode = "Packet"
-			else
-				noFallMode = "MotionY"
-			end
-		end
-	})
-	:Slider({
-		Name = "Y Velocity",
-		Min = 0.01,
-		Max = 0.5,
-		Default = 0.2,
-		Callback = function(val)
-			noFallYValue = val
-		end
-	})
-	:Slider({
-		Name = "Spoof Ticks",
-		Min = 1,
-		Max = 10,
-		Default = 3,
-		Callback = function(val)
-			noFallSpoofTicks = math.floor(val)
-		end
-	})
+
 
 Tab2:Toggle({
 	Name = "KickSelf",
@@ -1866,24 +1825,7 @@ connect(game:GetService("RunService").Tick, function()
 		return
 	end
 
-	if noFall then
-		local char = LocalPlayer.Character
-		local onGround = char:IsOnGround()
-		local falling = char:GetMotionY() < -0.5
-		-- Track if we have spoofed this fall
-		if not noFallSpoofed then noFallSpoofed = false end
-		if not onGround and falling then
-			local pos = char:GetPosition()
-			local blockBelow1 = Workspace:GetBlockName(Vector3.new(pos.X, pos.Y - 1, pos.Z))
-			local blockBelow2 = Workspace:GetBlockName(Vector3.new(pos.X, pos.Y - 2, pos.Z))
-			if (blockBelow1 ~= "air" or blockBelow2 ~= "air") and not noFallSpoofed then
-				PacketService:SendPacket("C04", {pos.X, pos.Y, pos.Z, true})
-				noFallSpoofed = true
-			end
-		else
-			noFallSpoofed = false
-		end
-	end
+
 
 	if VelocityToggle then
 		DoVelocity()
