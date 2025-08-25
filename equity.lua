@@ -1808,7 +1808,7 @@ PacketService.PacketSend:Connect(function(packet)
 	local id = packet.Packet.ID;
 	if killaura_skip_switch then
 		if id == "C0A" and not packet:Checkcaller() then
-			packet:setCanceled(true)
+			packet:SetCancel(true)
 		elseif id == "C02" then
 			killaura_skip_switch = false
 		end
@@ -1819,14 +1819,7 @@ connect(game:GetService("RunService").Tick, function()
 	if Killaura then
 		DoKillaura()
 	end
-
-	if not (LocalPlayer.Character and LocalPlayer.Character:IsAlive()) then
-		noFallSpoofCounter = 0
-		return
-	end
-
-
-
+	
 	if VelocityToggle then
 		DoVelocity()
 	end
