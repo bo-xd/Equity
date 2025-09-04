@@ -1093,7 +1093,7 @@ function FluxLib.new(settings)
 end
 
 local lib = FluxLib.new{
-    name = "Bosploit",
+    name = "Equity",
     description = "yep this makes you cracked at minecraft"
 }
 
@@ -1138,19 +1138,6 @@ UI:Toggle({
 	end,
 })
 
-UI:TextBox({
-	Name ="Foreground",
-	Description = "Customize the foreground color of the UI.",
-	ItemContent = "OH MY GOD",
-	Callback = function(Callback)
-		
-	end
-})
-
-
-
-
-
 Tab2:Toggle({
 	Name = "KickSelf",
 	Description = "kicks you (works only in servers)",
@@ -1166,14 +1153,6 @@ local noclickdelay = Tab1:Toggle({
 	Callback = function(Callback)
 		
 	end
-}):Options():Slider({
-	Name = "test",
-	Min = 0,
-	Max = 10,
-	Default = 5,
-    Callback = function(val)
-        
-    end
 })
 Tab1:Toggle({
 	Name ="Fullbright",
