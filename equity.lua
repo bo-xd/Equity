@@ -742,7 +742,7 @@ function FluxLib.new(settings)
 					local function update()
 						local absolutePosition = line.AbsolutePosition.X
 						local absoluteSize = line.AbsoluteSize.X
-						local sliderX = (Mouse.X - absolutePosition)
+						local sliderX = (X - absolutePosition)
 						local range = math.min(1, math.max(sliderX/absoluteSize, 0))
 						set(rangeToValue(range), range)
 					end
@@ -1093,7 +1093,7 @@ function FluxLib.new(settings)
 end
 
 local lib = FluxLib.new{
-    name = "Equity",
+    name = "Bosploit",
     description = "yep this makes you cracked at minecraft"
 }
 
@@ -1112,23 +1112,19 @@ local UI = lib:Tab{
     icon = "https://upload.wikimedia.org/wikipedia/commons/3/36/Fortnite.png"
 }
 
-
-
-
-
-
+local velocityX, VelocityY, VelocityZ = 0,0,0;
 local Fullbright, prevBrightness = false, nil
-local Eagle = false
-local Killaura = false
-local ReachToggle = false
-local ReachRange = 4
+local ReachToggle, ReachRange = false, 4
 local VelocityToggle = false
-local Scaffold = false
+local AutoClicker = false
+local aimassist = false
 local SumoWalls = false
+local Scaffold = false
+local Killaura = false
+local Eagle = false
+local Wtap = false
 local counter = 0
-
-
-
+local Cps = 5;
 
 UI:Toggle({
 	Name ="Transparent UI",
@@ -1136,6 +1132,15 @@ UI:Toggle({
 	Callback = function(Callback)
 		
 	end,
+})
+
+UI:TextBox({
+	Name ="Foreground",
+	Description = "Customize the foreground color of the UI.",
+	ItemContent = "OH MY GOD",
+	Callback = function(Callback)
+		
+	end
 })
 
 Tab2:Toggle({
@@ -1146,14 +1151,6 @@ Tab2:Toggle({
 	end
 })
 
-
-local noclickdelay = Tab1:Toggle({
-	Name ="NoClickDelay",
-	Description = "Removes click delay",
-	Callback = function(Callback)
-		
-	end
-})
 Tab1:Toggle({
 	Name ="Fullbright",
 	Description = "Gives you night vision",
@@ -1170,16 +1167,24 @@ Tab1:Toggle({
 	Name ="AutoClicker",
 	Description = "Automatically clicks",
 	Callback = function(Callback)
-		
+		AutoClicker = not AutoClicker
 	end
-}):Options()
+}):Options():Slider({
+	Name = "Cps",
+	Min = 1,
+	Max = 30,
+	Default = 5,
+    Callback = function(val)
+        Cps = val
+    end
+})
 
 
 Tab1:Toggle({
 	Name ="Wtap",
 	Description = "Double click on click",
 	Callback = function(Callback)
-		
+		Wtap = not Wtap
 	end
 }):Options()
 
@@ -1215,9 +1220,33 @@ Tab1:Toggle({
 	name = "AimAssist",
 	Description = "Assists you in aiming",
 	Callback = function(Callback)
-		print("hello")
+		aimassist = not aimassist
 	end,
-}):Options()
+}):Options():Toggle({
+	Name = "Disable On Death",
+	Flag = "aimassist_disable"
+}):Toggle({
+	Name = "Requires mouse down",
+	Flag = "aimassist_mousedown"
+}):Slider({
+	Name = "Range",
+	Flag = "aimassist_range",
+	Min = 1,
+	Max = 6,
+	Default = 4
+}):Slider({
+	Name = "Assist Angle",
+	Flag = "aimassist_angle_attach",
+	Min = 1,
+	Max = 360,
+	Default = 15,
+}):Slider({
+	Name = "Aim Speed",
+	Flag = "aimassist_aim_speed",
+	Min = 0.1,
+	Max = 2,
+	Default = 1
+})
 
 Tab1:Toggle({
 	name = "Velocity",
@@ -1225,7 +1254,31 @@ Tab1:Toggle({
 	Callback = function(Callback)
 		VelocityToggle = not VelocityToggle
 	end,
-}):Options()
+}):Options():Slider({
+	Name = "X",
+	Min = 0,
+	Max = 10,
+	Default = 0,
+    Callback = function(val)
+        velocityX = val
+    end
+}):Slider({
+	Name = "Y",
+	Min = 0,
+	Max = 10,
+	Default = 0,
+    Callback = function(val)
+        velocityY = val
+    end
+}):Slider({
+	Name = "Z",
+	Min = 0,
+	Max = 10,
+	Default = 0,
+    Callback = function(val)
+        velocityZ = val
+    end
+})
 local killauraTeamcheck = false;
 local killauraCooldown = 200
 local killauraCooldownMin = 5
@@ -1372,11 +1425,6 @@ Name ="SumoWalls",
 
 
 
-
-
-
-
-
 local function GetClosest(distance_limit, teamcheck, hit_entities)
     local localPlayer = LocalPlayer.Character -- when changing worlds the character changes so we have to do this to keep it updated
 
@@ -1447,6 +1495,32 @@ function GetYawAndPitch(entity)
 	return moveYaw, movePitch
 end
 
+function doAimassist()
+	if not LocalPlayer.Character:IsAlive() then
+		if lib.flags["aimassist_disable"].Enabled then
+			lib.flags["aimassist"]:Set(false)
+		end
+		
+		return
+	end
+
+	if lib.flags["aimassist_mousedown"].Enabled and Mouse.Button1Down == false then
+		return
+	end
+
+	local closestEntity = GetClosest(lib.flags["aimassist_range"]:Get())
+	if closestEntity == nil then return end
+
+	local yaw, pitch = GetYawAndPitch(closestEntity)
+	local gcd = 0.2
+	local yawGcdFix = 0.05 - (yaw % gcd)
+	local pitchGcdFix = 0.05 - (pitch % gcd)
+
+	if math.abs(yaw) > lib.flags["aimassist_angle_attach"]:Get() then return end
+	local aimspeed = lib.flags["aimassist_aim_speed"]:Get()
+	LocalPlayer.Character:SetYaw(LocalPlayer.Character:GetYaw() + yaw * 0.5 * aimspeed + yawGcdFix)
+	LocalPlayer.Character:SetPitch(LocalPlayer.Character:GetPitch() + pitch * 0.5 * aimspeed + pitchGcdFix)
+end
 
 function DoKillaura()
 	if not LocalPlayer.Character:IsAlive() then
@@ -1496,16 +1570,23 @@ end
 local killaura_skip_switch = false;
 local killaura_time = os.clock()
 function Attack(entity)
-	if (killaura_time < os.clock()) then
-		local Character = LocalPlayer.Character
-		
-		killaura_time = os.clock() + ( 1 / math.random(killauraCooldownMin, killauraCooldownMax) )
-		killaura_skip_switch = true;
-		
-		Character:Swing()
-		PacketService:SendPacket("C0A", {})
-		PacketService:SendPacket("C02", { entity.entityObject, Character.Attack })
-		-- LocalPlayer.Character:AttackEntity(entity.entityObject)
+    if (killaura_time < os.clock()) then
+        local Character = LocalPlayer.Character
+
+        killaura_time = os.clock() + ( 1 / math.random(killauraCooldownMin, killauraCooldownMax) )
+        killaura_skip_switch = true;
+
+        -- WTap logic
+        if Wtap then
+            Character:SetSprinting(false)
+            wait(0.05)
+            Character:SetSprinting(true)
+        end
+
+        Character:Swing()
+        PacketService:SendPacket("C0A", {})
+        PacketService:SendPacket("C02", { entity.entityObject, Character.Attack })
+        -- LocalPlayer.Character:AttackEntity(entity.entityObject)
     end
 end
 function DoReach()
@@ -1621,10 +1702,6 @@ function DoEagle()
 		LocalPlayer.Character:SetSneaking(false)
 	end
 end
-
-
-
-
 
 do
 	if Block then
@@ -1762,10 +1839,14 @@ local counter = 0
 
 function DoVelocity()
     if LocalPlayer.Character:GetHurtTime() == 9 then
-        LocalPlayer.Character:SetMotionZ(0)
-        LocalPlayer.Character:SetMotionY(0)
-        LocalPlayer.Character:SetMotionX(0)
+        LocalPlayer.Character:SetMotionX(velocityX)
+        LocalPlayer.Character:SetMotionY(VelocityY)
+        LocalPlayer.Character:SetMotionZ(VelocityZ)
     end
+end
+
+function DoAutoClicker()
+	Mouse.MouseButton1Click();
 end
 
 function DoFullbright()
@@ -1799,6 +1880,10 @@ connect(game:GetService("RunService").Tick, function()
 		DoKillaura()
 	end
 	
+	if aimassist then
+		doAimassist()
+	end
+
 	if VelocityToggle then
 		DoVelocity()
 	end
@@ -1808,6 +1893,10 @@ connect(game:GetService("RunService").Tick, function()
 
 	if Eagle then
 		DoEagle()
+	end
+
+	if AutoClicker then
+		DoAutoClicker()
 	end
 
 	if SumoWalls then
